@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { within, userEvent, expect } from "@storybook/test";
+import { within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { expect } from "vitest";
 import { BalanceCard } from "./components/BalanceCard";
 import { RequestForm } from "./components/RequestForm";
 import { PendingRequestRow } from "./components/PendingRequestRow";
