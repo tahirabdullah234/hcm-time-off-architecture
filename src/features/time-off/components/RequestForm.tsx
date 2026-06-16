@@ -65,9 +65,18 @@ export function RequestForm({
     return "";
   }, [startDate, endDate, daysRequested, maxBalance, existingRanges]);
 
+  const blockingError = useMemo(() => {
+    if (!startDate || !endDate) return true;
+    if (startDate < today) return true;
+    if (endDate < today) return true;
+    if (endDate < startDate) return true;
+    if (hasOverlap(startDate, endDate, existingRanges)) return true;
+    return false;
+  }, [startDate, endDate, existingRanges]);
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!startDate || !endDate || error) return;
+    if (!startDate || !endDate || blockingError) return;
     onSubmit({
       employeeId,
       location,
@@ -126,7 +135,7 @@ export function RequestForm({
         <Button
           type="submit"
           loading={isSubmitting}
-          disabled={isSubmitting || !!error || !startDate || !endDate}
+          disabled={isSubmitting || blockingError}
           className="w-full"
         >
           {isSubmitting ? "Submitting..." : "Submit Request"}

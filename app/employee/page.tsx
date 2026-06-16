@@ -31,8 +31,6 @@ export default function EmployeeDashboard() {
   const pendingRequests = myRequests.filter(
     (r) => r.status === "pending" || r.status === "optimistic-pending"
   );
-  const usedDays = pendingRequests.reduce((sum, r) => sum + r.daysRequested, 0);
-  const availableBalance = Math.max(0, (myBalance?.balance ?? 0) - usedDays);
   const existingDateRanges = pendingRequests.map((r) => ({
     startDate: r.startDate,
     endDate: r.endDate,
@@ -63,7 +61,7 @@ export default function EmployeeDashboard() {
           employeeId={CURRENT_EMPLOYEE.employeeId}
           employeeName={CURRENT_EMPLOYEE.employeeName}
           location={CURRENT_EMPLOYEE.location}
-          maxBalance={availableBalance}
+          maxBalance={myBalance?.balance ?? 0}
           existingRanges={existingDateRanges}
           onSubmit={handleSubmit}
           isSubmitting={submitMutation.isPending}
