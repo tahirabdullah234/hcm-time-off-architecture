@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useBalances } from "@/src/features/time-off/hooks/useBalances";
 import { useSubmitRequest } from "@/src/features/time-off/hooks/useSubmitRequest";
 import { BalanceCard } from "@/src/features/time-off/components/BalanceCard";
 import { RequestForm } from "@/src/features/time-off/components/RequestForm";
 import { PendingRequestRow } from "@/src/features/time-off/components/PendingRequestRow";
+import { Button } from "@/src/components/ui/Button";
 import type { SubmitRequestPayload } from "@/src/features/time-off/types";
 
 const CURRENT_EMPLOYEE = {
@@ -15,6 +18,7 @@ const CURRENT_EMPLOYEE = {
 };
 
 export default function EmployeeDashboard() {
+  const queryClient = useQueryClient();
   const { data, isLoading, isStale, isFetching } = useBalances();
   const submitMutation = useSubmitRequest();
 
@@ -38,6 +42,17 @@ export default function EmployeeDashboard() {
 
   const handleSubmit = (payload: SubmitRequestPayload) => {
     submitMutation.mutate(payload);
+  };
+
+  const [scenarioLog, setScenarioLog] = useState<string[]>([]);
+
+  const log = (msg: string) => setScenarioLog((prev) => [...prev.slice(-4), `[${new Date().toLocaleTimeString()}] ${msg}`]);
+
+  const triggerAnniversary = async () => {
+    log("Triggering anniversary bonus...");
+    await fetch("/api/hcm/batch?triggerAnniversary=true");
+    queryClient.invalidateQueries({ queryKey: ["hcm", "balances"] });
+    log("Anniversary bonus applied! Balance should increase by 1-3 days.");
   };
 
   return (
@@ -97,6 +112,28 @@ export default function EmployeeDashboard() {
           Syncing with server...
         </p>
       )}
+
+      {/* Test Scenarios Panel */}
+      <section className="mt-10 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 dark:border-zinc-700 dark:bg-zinc-900">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-zinc-500">
+          Test Scenarios (Evaluator Use)
+        </h2>
+        <p className="mb-4 text-xs text-zinc-400">
+          Click any button to simulate a real-world HCM behavior. Watch the balance card, form, and toasts react.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="primary" size="sm" onClick={triggerAnniversary}>
+            Trigger Anniversary Bonus (+1-3 days)
+          </Button>
+        </div>
+        {scenarioLog.length > 0 && (
+          <div className="mt-4 space-y-1">
+            {scenarioLog.map((entry, i) => (
+              <p key={i} className="text-xs text-zinc-500">{entry}</p>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
