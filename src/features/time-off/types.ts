@@ -44,6 +44,7 @@ export interface SubmitRequestPayload {
   startDate: string;
   endDate: string;
   employeeName: string;
+  silentFail?: boolean;
 }
 
 export interface MutationState {

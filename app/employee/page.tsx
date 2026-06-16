@@ -55,6 +55,20 @@ export default function EmployeeDashboard() {
     log("Anniversary bonus applied! Balance should increase by 1-3 days.");
   };
 
+  const triggerSilentFail = () => {
+    const day = new Date().toISOString().slice(0, 10);
+    log("Simulating silent failure: submitting request with ?silentFail=true...");
+    submitMutation.mutate({
+      employeeId: CURRENT_EMPLOYEE.employeeId,
+      employeeName: CURRENT_EMPLOYEE.employeeName,
+      location: CURRENT_EMPLOYEE.location,
+      daysRequested: 2,
+      startDate: day,
+      endDate: day,
+      silentFail: true,
+    });
+  };
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8">
       <h1 className="mb-8 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
@@ -70,6 +84,7 @@ export default function EmployeeDashboard() {
           isLoading={isLoading}
           isStale={isStale}
           isOptimistic={hasOptimistic}
+          isReconciling={submitMutation.isReconciling}
         />
 
         <RequestForm
@@ -124,6 +139,9 @@ export default function EmployeeDashboard() {
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" size="sm" onClick={triggerAnniversary}>
             Trigger Anniversary Bonus (+1-3 days)
+          </Button>
+          <Button variant="primary" size="sm" onClick={triggerSilentFail}>
+            Trigger Silent Failure (API 200, no deduction)
           </Button>
         </div>
         {scenarioLog.length > 0 && (

@@ -8,6 +8,7 @@ interface BalanceCardProps {
   isLoading?: boolean;
   isStale?: boolean;
   isOptimistic?: boolean;
+  isReconciling?: boolean;
 }
 
 export function BalanceCard({
@@ -18,6 +19,7 @@ export function BalanceCard({
   isLoading = false,
   isStale = false,
   isOptimistic = false,
+  isReconciling = false,
 }: BalanceCardProps) {
   if (isLoading) {
     return (
@@ -47,6 +49,11 @@ export function BalanceCard({
           {isOptimistic && (
             <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
               pending
+            </span>
+          )}
+          {isReconciling && (
+            <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+              ⚠️ Out of sync with HCM. Re-verifying...
             </span>
           )}
         </div>

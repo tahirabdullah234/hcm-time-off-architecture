@@ -1,11 +1,13 @@
 "use client";
 
+import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { BatchResponse, SubmitRequestPayload, PendingRequest } from "@/src/features/time-off/types";
 import { useToast } from "@/src/providers/QueryClientProvider";
 
-async function submitRequest(payload: SubmitRequestPayload): Promise<{ success: boolean }> {
-  const res = await fetch("/api/hcm/real-time", {
+async function submitRequest(payload: SubmitRequestPayload) {
+  const url = payload.silentFail ? "/api/hcm/real-time?silentFail=true" : "/api/hcm/real-time";
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -20,8 +22,10 @@ async function submitRequest(payload: SubmitRequestPayload): Promise<{ success: 
 export function useSubmitRequest() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const [isReconciling, setIsReconciling] = useState(false);
+  const reconcilingRef = useRef(false);
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: submitRequest,
 
     onMutate: async (payload: SubmitRequestPayload) => {
@@ -58,6 +62,44 @@ export function useSubmitRequest() {
       return { previousData };
     },
 
+    onSuccess: (data, variables, context) => {
+      const prevBalance = context?.previousData?.balances.find(
+        (b) => b.employeeId === variables.employeeId && b.location === variables.location
+      )?.balance;
+
+      if (data?.balance?.balance != null && prevBalance != null) {
+        const expectedBalance = prevBalance - variables.daysRequested;
+        const serverBalance = data.balance.balance;
+
+        if (serverBalance > expectedBalance) {
+          reconcilingRef.current = true;
+          setIsReconciling(true);
+
+          queryClient.setQueryData<BatchResponse>(["hcm", "balances"], (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              balances: old.balances.map((b) =>
+                b.employeeId === variables.employeeId && b.location === variables.location
+                  ? { ...b, balance: prevBalance }
+                  : b
+              ),
+              pendingRequests: old.pendingRequests.filter(
+                (r) => r.status !== "optimistic-pending"
+              ),
+            };
+          });
+
+          addToast(
+            data.warning
+              ? data.warning + " Your balance has been restored."
+              : "HCM silently declined this request. Your balance has been restored.",
+            "info"
+          );
+        }
+      }
+    },
+
     onError: (error: Error, _payload, context) => {
       if (context?.previousData) {
         queryClient.setQueryData<BatchResponse>(["hcm", "balances"], context.previousData);
@@ -72,6 +114,14 @@ export function useSubmitRequest() {
 
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["hcm", "balances"] });
+      if (reconcilingRef.current) {
+        setTimeout(() => {
+          setIsReconciling(false);
+          reconcilingRef.current = false;
+        }, 4000);
+      }
     },
   });
+
+  return { ...mutation, isReconciling };
 }
