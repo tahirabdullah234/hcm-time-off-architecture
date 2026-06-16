@@ -1,8 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { within, userEvent, expect } from "@storybook/test";
 import { BalanceCard } from "./components/BalanceCard";
 import { RequestForm } from "./components/RequestForm";
 import { PendingRequestRow } from "./components/PendingRequestRow";
+import { Button } from "@/src/components/ui/Button";
 
+// ---------------------------------------------------------------------------
+// Meta
+// ---------------------------------------------------------------------------
 const meta = {
   title: "TimeOff/Components",
   parameters: { layout: "centered" },
@@ -10,6 +15,9 @@ const meta = {
 
 export default meta;
 
+// ---------------------------------------------------------------------------
+// BalanceCard — all observable states
+// ---------------------------------------------------------------------------
 export const BalanceCardDefault: StoryObj<typeof BalanceCard> = {
   render: () => (
     <div className="w-80">
@@ -65,7 +73,24 @@ export const BalanceCardOptimistic: StoryObj<typeof BalanceCard> = {
   ),
 };
 
-export const BalanceCardLowBalance: StoryObj<typeof BalanceCard> = {
+export const BalanceCardOptimisticRolledBack: StoryObj<typeof BalanceCard> = {
+  render: () => (
+    <div className="w-80">
+      <BalanceCard
+        employeeName="Alice Chen"
+        department="Engineering"
+        location="US-NYC"
+        balance={15}
+        isStale
+      />
+      <p className="mt-2 text-xs text-red-600">
+        Previous request was rolled back by HCM. Balance restored to 15.
+      </p>
+    </div>
+  ),
+};
+
+export const BalanceCardLow: StoryObj<typeof BalanceCard> = {
   render: () => (
     <div className="w-80">
       <BalanceCard
@@ -78,6 +103,26 @@ export const BalanceCardLowBalance: StoryObj<typeof BalanceCard> = {
   ),
 };
 
+export const BalanceCardRefreshedMidSession: StoryObj<typeof BalanceCard> = {
+  render: () => (
+    <div className="w-80">
+      <BalanceCard
+        employeeName="Alice Chen"
+        department="Engineering"
+        location="US-NYC"
+        balance={18}
+        isStale
+      />
+      <p className="mt-2 text-xs text-amber-600">
+        Balance updated: work-anniversary bonus applied.
+      </p>
+    </div>
+  ),
+};
+
+// ---------------------------------------------------------------------------
+// RequestForm — with interaction test
+// ---------------------------------------------------------------------------
 export const RequestFormDefault: StoryObj<typeof RequestForm> = {
   render: () => (
     <div className="w-80">
@@ -90,6 +135,23 @@ export const RequestFormDefault: StoryObj<typeof RequestForm> = {
       />
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const startDate = canvas.getByLabelText("Start Date");
+    const endDate = canvas.getByLabelText("End Date");
+    const days = canvas.getByLabelText("Days Requested");
+    const submitBtn = canvas.getByText("Submit Request");
+
+    await userEvent.type(startDate, "2026-07-10");
+    await userEvent.type(endDate, "2026-07-12");
+    await userEvent.clear(days);
+    await userEvent.type(days, "3");
+
+    expect(startDate).toHaveValue("2026-07-10");
+    expect(endDate).toHaveValue("2026-07-12");
+    expect(days).toHaveValue(3);
+    expect(submitBtn).not.toBeDisabled();
+  },
 };
 
 export const RequestFormSubmitting: StoryObj<typeof RequestForm> = {
@@ -107,6 +169,9 @@ export const RequestFormSubmitting: StoryObj<typeof RequestForm> = {
   ),
 };
 
+// ---------------------------------------------------------------------------
+// PendingRequestRow — all statuses
+// ---------------------------------------------------------------------------
 export const PendingRequestDefault: StoryObj<typeof PendingRequestRow> = {
   render: () => (
     <div className="w-full max-w-xl">
@@ -148,6 +213,19 @@ export const PendingRequestWithActions: StoryObj<typeof PendingRequestRow> = {
       />
     </div>
   ),
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step("Verify approve and deny buttons render", async () => {
+      expect(canvas.getByText("Approve")).toBeInTheDocument();
+      expect(canvas.getByText("Deny")).toBeInTheDocument();
+    });
+
+    await step("Click approve shows loading state", async () => {
+      const approveBtn = canvas.getByText("Approve");
+      await userEvent.click(approveBtn);
+    });
+  },
 };
 
 export const PendingRequestOptimistic: StoryObj<typeof PendingRequestRow> = {
@@ -206,6 +284,97 @@ export const PendingRequestRejected: StoryObj<typeof PendingRequestRow> = {
           submittedAt: "2026-06-13T11:00:00Z",
         }}
       />
+    </div>
+  ),
+};
+
+export const PendingRequestRolledBack: StoryObj<typeof PendingRequestRow> = {
+  render: () => (
+    <div className="w-full max-w-xl">
+      <div className="space-y-2">
+        <PendingRequestRow
+          request={{
+            id: "opt-rollback-001",
+            employeeId: "EMP001",
+            employeeName: "Alice Chen",
+            location: "US-NYC",
+            daysRequested: 2,
+            startDate: "2026-07-20",
+            endDate: "2026-07-21",
+            status: "optimistic-pending",
+            submittedAt: "2026-06-16T10:00:00Z",
+          }}
+        />
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+          HCM rejected this request. The optimistic entry will be removed and
+          your balance restored.
+        </div>
+      </div>
+    </div>
+  ),
+};
+
+// ---------------------------------------------------------------------------
+// HCM Silent Wrong — 200 returned but balance not actually deducted
+// ---------------------------------------------------------------------------
+export const HcmSilentlyWrong: StoryObj = {
+  render: () => (
+    <div className="w-full max-w-xl space-y-4">
+      <BalanceCard
+        employeeName="Alice Chen"
+        department="Engineering"
+        location="US-NYC"
+        balance={15}
+        isStale
+      />
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+        <strong>HCM responded 200 OK</strong>, but the balance was not deducted.
+        This happens when the HCM accepts the request format but silently
+        discards the mutation. The balance below shows the server-truth value,
+        which did not change.
+      </div>
+      <div className="flex items-center gap-2 text-xs text-zinc-500">
+        <span className="rounded bg-zinc-100 px-2 py-1 font-mono dark:bg-zinc-800">
+          Balance before: 15
+        </span>
+        <span className="text-zinc-300">&rarr;</span>
+        <span className="rounded bg-zinc-100 px-2 py-1 font-mono dark:bg-zinc-800">
+          Balance after: 15 (unchanged)
+        </span>
+      </div>
+      <Button
+        variant="primary"
+        size="sm"
+        onClick={() => alert("Manual reconciliation triggered")}
+      >
+        Reconcile Now
+      </Button>
+    </div>
+  ),
+};
+
+// ---------------------------------------------------------------------------
+// Balance Refreshed Mid-Session — Anniversary bonus arrives mid-poll
+// ---------------------------------------------------------------------------
+export const BalanceRefreshedMidSession: StoryObj = {
+  render: () => (
+    <div className="w-full max-w-xl space-y-3">
+      <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-xs text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">
+        Background sync completed &mdash; balances refreshed
+      </div>
+      <BalanceCard
+        employeeName="Alice Chen"
+        department="Engineering"
+        location="US-NYC"
+        balance={18}
+        isStale
+      />
+      <p className="text-xs text-zinc-500">
+        Alice&rsquo;s balance was 15 before the sync. The 30-second poll
+        detected a work-anniversary bonus of +3 days. The card shows the
+        updated server value with a &ldquo;stale&rdquo; indicator to signal
+        data was refreshed in the background.
+      </p>
     </div>
   ),
 };

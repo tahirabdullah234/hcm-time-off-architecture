@@ -28,6 +28,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const silentFail = searchParams.get("silentFail") === "true";
+
   const body = await request.json();
   const { employeeId, location, daysRequested, startDate, endDate, employeeName } = body;
 
@@ -65,6 +68,16 @@ export async function POST(request: NextRequest) {
       { error: "Insufficient balance", code: "HCM_422" },
       { status: 422 }
     );
+  }
+
+  if (silentFail) {
+    return NextResponse.json({
+      success: true,
+      balance: { ...employee, balance: employee.balance },
+      request: null,
+      warning: "HCM silently declined this request without deducting balance",
+      timestamp: new Date().toISOString(),
+    });
   }
 
   employee.balance -= daysRequested;
@@ -111,7 +124,9 @@ export async function PATCH(request: NextRequest) {
 
   if (action === "approve") {
     const employee = employees.find(
-      (e) => e.employeeId === (employeeId || pendingReq.employeeId) && e.location === (location || pendingReq.location)
+      (e) =>
+        e.employeeId === (employeeId || pendingReq.employeeId) &&
+        e.location === (location || pendingReq.location)
     );
 
     if (!employee) {
