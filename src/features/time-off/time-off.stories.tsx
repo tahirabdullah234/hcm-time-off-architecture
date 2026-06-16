@@ -317,6 +317,25 @@ export const PendingRequestRolledBack: StoryObj<typeof PendingRequestRow> = {
 };
 
 // ---------------------------------------------------------------------------
+// Empty / Zero-Balance States — no pending requests and zero balance
+// ---------------------------------------------------------------------------
+export const EmptyRequestsList: StoryObj = {
+  render: () => (
+    <div className="w-80 space-y-4">
+      <BalanceCard
+        employeeName="Alice Chen"
+        department="Engineering"
+        location="US-NYC"
+        balance={0}
+      />
+      <div className="rounded-lg border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-400 dark:border-zinc-600 dark:text-zinc-500">
+        No pending requests
+      </div>
+    </div>
+  ),
+};
+
+// ---------------------------------------------------------------------------
 // HCM Silent Wrong — 200 returned but balance not actually deducted
 // ---------------------------------------------------------------------------
 export const HcmSilentlyWrong: StoryObj = {
