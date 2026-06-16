@@ -141,17 +141,14 @@ export const RequestFormDefault: StoryObj<typeof RequestForm> = {
     const canvas = within(canvasElement);
     const startDate = canvas.getByLabelText("Start Date");
     const endDate = canvas.getByLabelText("End Date");
-    const days = canvas.getByLabelText("Days Requested");
     const submitBtn = canvas.getByText("Submit Request");
 
     await userEvent.type(startDate, "2026-07-10");
     await userEvent.type(endDate, "2026-07-12");
-    await userEvent.clear(days);
-    await userEvent.type(days, "3");
 
     expect(startDate).toHaveValue("2026-07-10");
     expect(endDate).toHaveValue("2026-07-12");
-    expect(days).toHaveValue(3);
+    expect(canvas.getByText(/Days requested: 3/)).toBeInTheDocument();
     expect(submitBtn).not.toBeDisabled();
   },
 };

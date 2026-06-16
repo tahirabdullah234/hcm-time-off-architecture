@@ -16,11 +16,10 @@ describe("RequestForm", () => {
 
     expect(screen.getByLabelText("Start Date")).toBeInTheDocument();
     expect(screen.getByLabelText("End Date")).toBeInTheDocument();
-    expect(screen.getByLabelText("Days Requested")).toBeInTheDocument();
     expect(screen.getByText("Submit Request")).toBeInTheDocument();
   });
 
-  it("displays max balance hint", () => {
+  it("displays max balance hint when dates are filled", () => {
     render(
       <RequestForm
         employeeId="EMP001"
@@ -31,7 +30,14 @@ describe("RequestForm", () => {
       />
     );
 
-    expect(screen.getByText(/Available balance: 15 days/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Start Date"), {
+      target: { value: "2026-07-10" },
+    });
+    fireEvent.change(screen.getByLabelText("End Date"), {
+      target: { value: "2026-07-12" },
+    });
+
+    expect(screen.getByText((_, el) => el?.textContent === "Days requested: 3 · Available balance: 15")).toBeInTheDocument();
   });
 
   it("shows submitting state", () => {
@@ -50,7 +56,7 @@ describe("RequestForm", () => {
     expect(screen.getByRole("button")).toBeDisabled();
   });
 
-  it("calls onSubmit with form data", () => {
+  it("calls onSubmit with auto-calculated days from date range", () => {
     const onSubmit = vi.fn();
     render(
       <RequestForm
@@ -67,9 +73,6 @@ describe("RequestForm", () => {
     });
     fireEvent.change(screen.getByLabelText("End Date"), {
       target: { value: "2026-07-12" },
-    });
-    fireEvent.change(screen.getByLabelText("Days Requested"), {
-      target: { value: "3" },
     });
     fireEvent.click(screen.getByText("Submit Request"));
 
