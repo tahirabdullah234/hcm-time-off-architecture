@@ -11,6 +11,11 @@ function diffDays(start: string, end: string): number {
   ) + 1;
 }
 
+interface DateRange {
+  startDate: string;
+  endDate: string;
+}
+
 interface RequestFormProps {
   employeeId: string;
   employeeName: string;
@@ -25,6 +30,11 @@ interface RequestFormProps {
     employeeName: string;
   }) => void;
   isSubmitting?: boolean;
+  existingRanges?: DateRange[];
+}
+
+function hasOverlap(start: string, end: string, ranges: DateRange[]): boolean {
+  return ranges.some((r) => start <= r.endDate && end >= r.startDate);
 }
 
 export function RequestForm({
@@ -34,6 +44,7 @@ export function RequestForm({
   maxBalance,
   onSubmit,
   isSubmitting = false,
+  existingRanges = [],
 }: RequestFormProps) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -49,9 +60,10 @@ export function RequestForm({
     if (startDate < today) return "Start date cannot be in the past";
     if (endDate < today) return "End date cannot be in the past";
     if (endDate < startDate) return "End date must be on or after start date";
+    if (hasOverlap(startDate, endDate, existingRanges)) return "Selected dates overlap with an existing request";
     if (daysRequested > maxBalance) return `Not enough balance (${daysRequested} requested, ${maxBalance} available)`;
     return "";
-  }, [startDate, endDate, daysRequested, maxBalance]);
+  }, [startDate, endDate, daysRequested, maxBalance, existingRanges]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
