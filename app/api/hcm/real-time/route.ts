@@ -147,6 +147,14 @@ export async function PATCH(request: NextRequest) {
   if (action === "approve") {
     pendingReq.status = "approved";
   } else if (action === "reject") {
+    const employee = employees.find(
+      (e) =>
+        e.employeeId === pendingReq.employeeId &&
+        e.location === pendingReq.location
+    );
+    if (employee) {
+      employee.balance += pendingReq.daysRequested;
+    }
     pendingReq.status = "rejected";
   } else {
     return NextResponse.json(
