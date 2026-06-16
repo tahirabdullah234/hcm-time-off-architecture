@@ -5,6 +5,7 @@ import { useBalances } from "../hooks/useBalances";
 import {
   realTimeBalanceCheck,
   approveRequest,
+  rejectRequest,
 } from "../api-client";
 import {
   createTestQueryClient,
@@ -428,5 +429,71 @@ describe("Section 6 - Test Case 4: The Decision Security Check", () => {
 
     expect(fetchLog[0].url).toContain("employeeId=EMP003");
     expect(fetchLog[0].url).toContain("location=UK-LON");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Test Case 5: Manager Reject Flow
+//   Verify that the manager's reject action dispatches a PATCH with
+//   the correct action field and returns the updated request.
+// ---------------------------------------------------------------------------
+describe("Section 6 - Test Case 5: The Manager Reject Flow", () => {
+  beforeEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("dispatches a PATCH with reject action when rejecting a request", async () => {
+    const fetchLog: Array<{ url: string; method: string; body?: string }> = [];
+    const patchResponse = createSuccessResponse({
+      success: true,
+      request: {
+        id: "REQ-001",
+        employeeId: "EMP001",
+        status: "rejected",
+        daysRequested: 3,
+      },
+      timestamp: "2026-06-16T12:00:01Z",
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+        const method = options?.method ?? "GET";
+        fetchLog.push({
+          url: url.toString(),
+          method,
+          body: options?.body?.toString(),
+        });
+        return Promise.resolve(patchResponse);
+      })
+    );
+
+    const result = await rejectRequest("REQ-001");
+
+    expect(result.request.status).toBe("rejected");
+    expect(result.request.id).toBe("REQ-001");
+    expect(fetchLog.length).toBe(1);
+    expect(fetchLog[0].method).toBe("PATCH");
+    expect(fetchLog[0].body).toContain("reject");
+    expect(fetchLog[0].body).toContain("REQ-001");
+  });
+
+  it("throws an error when the reject PATCH returns a non-ok status", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(() =>
+        Promise.resolve(
+          createErrorResponse(404, { error: "Request not found" })
+        )
+      )
+    );
+
+    await expect(rejectRequest("REQ-INVALID")).rejects.toThrow(
+      "Request not found"
+    );
   });
 });

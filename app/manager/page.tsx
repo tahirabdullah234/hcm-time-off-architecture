@@ -11,6 +11,7 @@ import {
 import { BalanceCard } from "@/src/features/time-off/components/BalanceCard";
 import { PendingRequestRow } from "@/src/features/time-off/components/PendingRequestRow";
 import { Card, CardHeader, CardTitle } from "@/src/components/ui/Card";
+import { Button } from "@/src/components/ui/Button";
 import { useToast } from "@/src/providers/QueryClientProvider";
 
 export default function ManagerDashboard() {
@@ -18,6 +19,9 @@ export default function ManagerDashboard() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
   const [validatingId, setValidatingId] = useState<string | null>(null);
+  const [scenarioLog, setScenarioLog] = useState<string[]>([]);
+
+  const log = (msg: string) => setScenarioLog((prev) => [...prev.slice(-4), `[${new Date().toLocaleTimeString()}] ${msg}`]);
 
   const handleApprove = useCallback(async (requestId: string) => {
     const req = data?.pendingRequests.find((r) => r.id === requestId);
@@ -59,6 +63,15 @@ export default function ManagerDashboard() {
       setValidatingId(null);
     }
   }, [data, queryClient, addToast]);
+
+  const triggerLateDeduction = async (employeeId: string) => {
+    const emp = data?.balances.find((b) => b.employeeId === employeeId);
+    if (!emp) { log("Employee not found"); return; }
+    log(`Simulating late deduction for ${emp.employeeName} (current balance: ${emp.balance})...`);
+    await fetch(`/api/hcm/batch?triggerLateDeduction=${employeeId}`);
+    queryClient.invalidateQueries({ queryKey: ["hcm", "balances"] });
+    log(`Deducted 1-5 days from ${emp.employeeName}. Try approving now - should fail if balance dropped below requested.`);
+  };
 
   const pendingRequests =
     data?.pendingRequests.filter(
@@ -142,6 +155,27 @@ export default function ManagerDashboard() {
           Refreshing team data...
         </p>
       )}
+
+      <section className="mt-10 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 dark:border-zinc-700 dark:bg-zinc-900">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-zinc-500">
+          Test Scenarios (Evaluator Use)
+        </h2>
+        <p className="mb-4 text-xs text-zinc-400">
+          Click any button to simulate a real-world HCM behavior. Watch the approval flow and balance card react.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="primary" size="sm" onClick={() => triggerLateDeduction("EMP001")}>
+            Simulate Late Deduction (EMP001 - Alice)
+          </Button>
+        </div>
+        {scenarioLog.length > 0 && (
+          <div className="mt-4 space-y-1">
+            {scenarioLog.map((entry, i) => (
+              <p key={i} className="text-xs text-zinc-500">{entry}</p>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
