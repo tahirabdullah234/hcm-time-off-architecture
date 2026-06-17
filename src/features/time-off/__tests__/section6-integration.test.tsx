@@ -497,3 +497,122 @@ describe("Section 6 - Test Case 5: The Manager Reject Flow", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// Test Case 6: The Silent Failure Path (Scenario F)
+//   API returns a 200 OK but the server balance was not deducted.
+//   The hook must detect the discrepancy, roll back to the original balance,
+//   and set isReconciling = true so the BalanceCard shows the badge.
+// ---------------------------------------------------------------------------
+describe("Section 6 - Test Case 6: The Silent Failure Path", () => {
+  const mockAddToast = vi.fn();
+
+  beforeEach(() => {
+    vi.unstubAllGlobals();
+    mockAddToast.mockClear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("rolls back balance and sets isReconciling when 200 OK returns unchanged balance", async () => {
+    const controlled = createControlledFetch();
+    vi.stubGlobal("fetch", controlled.mockFetch);
+
+    const queryClient = createTestQueryClient();
+    seedBalances(queryClient);
+
+    expect(getBalances(queryClient)!.balances[0].balance).toBe(15);
+
+    const { result } = renderHook(() => useSubmitRequest(), {
+      wrapper: createWrapper(queryClient, { addToast: mockAddToast }),
+    });
+
+    act(() => {
+      result.current.mutate({
+        employeeId: "EMP001",
+        location: "US-NYC",
+        daysRequested: 2,
+        startDate: "2026-07-10",
+        endDate: "2026-07-11",
+        employeeName: "Alice Chen",
+      });
+    });
+
+    await waitFor(() => {
+      expect(getBalances(queryClient)!.balances[0].balance).toBe(13);
+    });
+
+    controlled.resolve(
+      createSuccessResponse({
+        success: true,
+        balance: {
+          employeeId: "EMP001",
+          location: "US-NYC",
+          balance: 15,
+        },
+      })
+    );
+
+    await waitFor(() => {
+      expect(getBalances(queryClient)!.balances[0].balance).toBe(15);
+    });
+
+    expect(result.current.isReconciling).toBe(true);
+
+    expect(mockAddToast).toHaveBeenCalledWith(
+      expect.stringContaining("silently declined"),
+      "info"
+    );
+  });
+
+  it("clears the optimistic-pending request from the cache on silent failure", async () => {
+    const controlled = createControlledFetch();
+    vi.stubGlobal("fetch", controlled.mockFetch);
+
+    const queryClient = createTestQueryClient();
+    seedBalances(queryClient);
+
+    const originalRequestCount =
+      getBalances(queryClient)!.pendingRequests.length;
+
+    const { result } = renderHook(() => useSubmitRequest(), {
+      wrapper: createWrapper(queryClient, { addToast: mockAddToast }),
+    });
+
+    act(() => {
+      result.current.mutate({
+        employeeId: "EMP001",
+        location: "US-NYC",
+        daysRequested: 2,
+        startDate: "2026-07-10",
+        endDate: "2026-07-11",
+        employeeName: "Alice Chen",
+      });
+    });
+
+    await waitFor(() => {
+      expect(getBalances(queryClient)!.pendingRequests.length).toBe(
+        originalRequestCount + 1
+      );
+    });
+
+    controlled.resolve(
+      createSuccessResponse({
+        success: true,
+        balance: {
+          employeeId: "EMP001",
+          location: "US-NYC",
+          balance: 15,
+        },
+      })
+    );
+
+    await waitFor(() => {
+      expect(getBalances(queryClient)!.pendingRequests.length).toBe(
+        originalRequestCount
+      );
+    });
+  });
+});

@@ -61,6 +61,20 @@ describe("BalanceCard", () => {
     expect(screen.getByText("stale")).toBeInTheDocument();
   });
 
+  it("renders zero balance without error", () => {
+    render(
+      <BalanceCard
+        employeeName="Alice Chen"
+        department="Engineering"
+        location="US-NYC"
+        balance={0}
+      />
+    );
+
+    expect(screen.getByText("0")).toBeInTheDocument();
+    expect(screen.getByText(/Alice Chen/)).toBeInTheDocument();
+  });
+
   it("displays pending badge when isOptimistic is true", () => {
     render(
       <BalanceCard
@@ -73,5 +87,37 @@ describe("BalanceCard", () => {
     );
 
     expect(screen.getByText("pending")).toBeInTheDocument();
+  });
+
+  it("displays reconciling badge when isReconciling is true", () => {
+    render(
+      <BalanceCard
+        employeeName="Alice Chen"
+        department="Engineering"
+        location="US-NYC"
+        balance={15}
+        isReconciling
+      />
+    );
+
+    expect(
+      screen.getByText("⚠️ Out of sync with HCM. Re-verifying...")
+    ).toBeInTheDocument();
+  });
+
+  it("hides reconciling badge when isReconciling is false", () => {
+    render(
+      <BalanceCard
+        employeeName="Alice Chen"
+        department="Engineering"
+        location="US-NYC"
+        balance={15}
+        isReconciling={false}
+      />
+    );
+
+    expect(
+      screen.queryByText("⚠️ Out of sync with HCM. Re-verifying...")
+    ).not.toBeInTheDocument();
   });
 });
