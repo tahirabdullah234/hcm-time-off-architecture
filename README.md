@@ -104,25 +104,27 @@ npm test
 npm run storybook
 ```
 
-Opens on http://localhost:6006. Contains **37 stories**:
+Opens on http://localhost:6006. Contains **43 stories**:
 
 **TimeOff/Components (25):**
-- BalanceCard: default, loading, stale, optimistic, optimistic-rolled-back, low balance, **reconciling**, mid-session refresh
-- RequestForm: default (with interaction test), submitting, **offline**, **validation: past date**, **validation: overlap**, **validation: insufficient balance**
-- PendingRequestRow: default, with-actions (with interaction test), **offline**, **validating**, optimistic, approved, rejected, rolled-back
+- BalanceCard: default, loading, stale, optimistic, optimistic-rolled-back, low balance, reconciling, mid-session refresh
+- RequestForm: default (with interaction test), submitting, offline, validation: past date, validation: overlap, validation: insufficient balance
+- PendingRequestRow: default, with-actions (with interaction test), offline, validating, optimistic, approved, rejected, rolled-back
 - Composite: empty requests list, HCM silently wrong, mid-session refresh
 
-**TimeOff/Dashboard (6)** — all MSW-powered with play functions:
-- Happy Path — submits optimistically, balance drops
-- Slow Network — 5-second delay, shows syncing state
-- HCM Rejected — 422 error, balance rolls back automatically
-- Mid-Session Refresh — anniversary bonus updates balance
-- **Loading Skeleton** — batch never resolves, shows pulse skeletons
-- **Network Error** — batch returns 500, shows zero + stale
+**TimeOff/Dashboard (6)** — MSW-powered with play functions:
+- Happy Path, Slow Network, HCM Rejected, Mid-Session Refresh, Loading Skeleton, Network Error
+
+**TimeOff/ManagerDashboard (6)** — MSW-powered with play functions:
+- Happy Path — 3 team balances + 3 pending requests
+- Approval Success — approve Alice's request
+- Approval Rejected — HCM 409 conflict on approve
+- Loading Skeleton — pulse skeletons
+- No Pending Requests — empty state card
+- Network Error — 500 from batch
 
 **TimeOff/OfflineBanner (2):**
-- Online (hidden)
-- Offline (visible amber banner)
+- Online (hidden), Offline (visible amber banner)
 
 **UI/Button (9):**
 - Primary, Secondary, Danger, Ghost, Small, Large, Loading, Disabled, All variants
