@@ -105,6 +105,20 @@ export const BalanceCardLow: StoryObj<typeof BalanceCard> = {
   ),
 };
 
+export const BalanceCardReconciling: StoryObj<typeof BalanceCard> = {
+  render: () => (
+    <div className="w-80">
+      <BalanceCard
+        employeeName="Alice Chen"
+        department="Engineering"
+        location="US-NYC"
+        balance={12}
+        isReconciling
+      />
+    </div>
+  ),
+};
+
 export const BalanceCardRefreshedMidSession: StoryObj<typeof BalanceCard> = {
   render: () => (
     <div className="w-80">
@@ -150,6 +164,95 @@ export const RequestFormDefault: StoryObj<typeof RequestForm> = {
     expect(endDate).toHaveValue("2026-07-12");
     expect(canvas.getByText(/Days requested: 3/)).toBeInTheDocument();
     expect(submitBtn).not.toBeDisabled();
+  },
+};
+
+export const RequestFormOffline: StoryObj<typeof RequestForm> = {
+  render: () => (
+    <div className="w-80">
+      <RequestForm
+        employeeId="EMP001"
+        employeeName="Alice Chen"
+        location="US-NYC"
+        maxBalance={15}
+        onSubmit={(p) => console.log("Submit:", p)}
+        isOffline
+      />
+    </div>
+  ),
+};
+
+export const RequestFormValidationPastDate: StoryObj<typeof RequestForm> = {
+  render: () => (
+    <div className="w-80">
+      <RequestForm
+        employeeId="EMP001"
+        employeeName="Alice Chen"
+        location="US-NYC"
+        maxBalance={15}
+        onSubmit={(p) => console.log("Submit:", p)}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const startDate = canvas.getByLabelText("Start Date");
+    const endDate = canvas.getByLabelText("End Date");
+    await userEvent.type(startDate, yesterday);
+    await userEvent.type(endDate, yesterday);
+    await expect(
+      canvas.getByText("Start date cannot be in the past")
+    ).toBeInTheDocument();
+  },
+};
+
+export const RequestFormValidationOverlap: StoryObj<typeof RequestForm> = {
+  render: () => (
+    <div className="w-80">
+      <RequestForm
+        employeeId="EMP001"
+        employeeName="Alice Chen"
+        location="US-NYC"
+        maxBalance={15}
+        onSubmit={(p) => console.log("Submit:", p)}
+        existingRanges={[{ startDate: "2026-07-10", endDate: "2026-07-12" }]}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const startDate = canvas.getByLabelText("Start Date");
+    const endDate = canvas.getByLabelText("End Date");
+    await userEvent.type(startDate, "2026-07-11");
+    await userEvent.type(endDate, "2026-07-13");
+    await expect(
+      canvas.getByText("Selected dates overlap with an existing request")
+    ).toBeInTheDocument();
+  },
+};
+
+export const RequestFormValidationInsufficientBalance: StoryObj<typeof RequestForm> = {
+  render: () => (
+    <div className="w-80">
+      <RequestForm
+        employeeId="EMP001"
+        employeeName="Alice Chen"
+        location="US-NYC"
+        maxBalance={2}
+        onSubmit={(p) => console.log("Submit:", p)}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const startDate = canvas.getByLabelText("Start Date");
+    const endDate = canvas.getByLabelText("End Date");
+    await userEvent.type(startDate, "2026-07-20");
+    await userEvent.type(endDate, "2026-07-25");
+    await expect(
+      canvas.getByText(/Not enough balance/)
+    ).toBeInTheDocument();
   },
 };
 
@@ -225,6 +328,54 @@ export const PendingRequestWithActions: StoryObj<typeof PendingRequestRow> = {
       await userEvent.click(approveBtn);
     });
   },
+};
+
+export const PendingRequestOffline: StoryObj<typeof PendingRequestRow> = {
+  render: () => (
+    <div className="w-full max-w-xl">
+      <PendingRequestRow
+        request={{
+          id: "REQ-001",
+          employeeId: "EMP001",
+          employeeName: "Alice Chen",
+          location: "US-NYC",
+          daysRequested: 3,
+          startDate: "2026-07-10",
+          endDate: "2026-07-12",
+          status: "pending",
+          submittedAt: "2026-06-14T09:30:00Z",
+        }}
+        showActions
+        isOffline
+        onApprove={(id) => console.log("Approve:", id)}
+        onReject={(id) => console.log("Reject:", id)}
+      />
+    </div>
+  ),
+};
+
+export const PendingRequestValidating: StoryObj<typeof PendingRequestRow> = {
+  render: () => (
+    <div className="w-full max-w-xl">
+      <PendingRequestRow
+        request={{
+          id: "REQ-001",
+          employeeId: "EMP001",
+          employeeName: "Alice Chen",
+          location: "US-NYC",
+          daysRequested: 3,
+          startDate: "2026-07-10",
+          endDate: "2026-07-12",
+          status: "pending",
+          submittedAt: "2026-06-14T09:30:00Z",
+        }}
+        showActions
+        isValidating
+        onApprove={(id) => console.log("Approve:", id)}
+        onReject={(id) => console.log("Reject:", id)}
+      />
+    </div>
+  ),
 };
 
 export const PendingRequestOptimistic: StoryObj<typeof PendingRequestRow> = {

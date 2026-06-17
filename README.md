@@ -43,8 +43,6 @@ npm install
 npm run dev
 ```
 
-### Dashboards
-
 | View | URL |
 |---|---|
 | Employee Dashboard | http://localhost:3000/employee |
@@ -106,15 +104,28 @@ npm test
 npm run storybook
 ```
 
-Opens on http://localhost:6006. Contains **22 stories**:
+Opens on http://localhost:6006. Contains **37 stories**:
 
-**Component stories (18):** BalanceCard (7 states), RequestForm (2 states + play function), PendingRequestRow (7 states + play function), Empty list, HCM silently wrong, Mid-session refresh
+**TimeOff/Components (25):**
+- BalanceCard: default, loading, stale, optimistic, optimistic-rolled-back, low balance, **reconciling**, mid-session refresh
+- RequestForm: default (with interaction test), submitting, **offline**, **validation: past date**, **validation: overlap**, **validation: insufficient balance**
+- PendingRequestRow: default, with-actions (with interaction test), **offline**, **validating**, optimistic, approved, rejected, rolled-back
+- Composite: empty requests list, HCM silently wrong, mid-session refresh
 
-**MSW-powered dashboard stories (4 with play functions):**
+**TimeOff/Dashboard (6)** — all MSW-powered with play functions:
 - Happy Path — submits optimistically, balance drops
 - Slow Network — 5-second delay, shows syncing state
 - HCM Rejected — 422 error, balance rolls back automatically
 - Mid-Session Refresh — anniversary bonus updates balance
+- **Loading Skeleton** — batch never resolves, shows pulse skeletons
+- **Network Error** — batch returns 500, shows zero + stale
+
+**TimeOff/OfflineBanner (2):**
+- Online (hidden)
+- Offline (visible amber banner)
+
+**UI/Button (9):**
+- Primary, Secondary, Danger, Ghost, Small, Large, Loading, Disabled, All variants
 
 ## Architecture
 

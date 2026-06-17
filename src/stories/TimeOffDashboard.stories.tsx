@@ -213,6 +213,19 @@ const refreshedBatchHandler = http.get("/api/hcm/batch", async () => {
   return HttpResponse.json(REFRESHED_BATCH);
 });
 
+const neverResolveHandler = http.get("/api/hcm/batch", async () => {
+  await delay(86400000);
+  return HttpResponse.json(INITIAL_BATCH);
+});
+
+const errorBatchHandler = http.get("/api/hcm/batch", async () => {
+  await delay(300);
+  return HttpResponse.json(
+    { error: "HCM service unavailable", code: "HCM_500" },
+    { status: 500 }
+  );
+});
+
 // ---------------------------------------------------------------------------
 // Meta
 // ---------------------------------------------------------------------------
@@ -359,5 +372,49 @@ export const MidSessionRefreshAnniversaryBonus: StoryObj = {
 
     expect(startDate).toHaveValue("2026-07-20");
     expect(endDate).toHaveValue("2026-07-21");
+  },
+};
+
+// ---------------------------------------------------------------------------
+// 5. Loading Skeleton — batch endpoint never resolves
+// ---------------------------------------------------------------------------
+export const DashboardLoadingSkeleton: StoryObj = {
+  render: () => <DashboardStory />,
+  parameters: {
+    msw: {
+      handlers: [neverResolveHandler],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await waitFor(() => {
+      const skeletons = canvasElement.querySelectorAll(".animate-pulse");
+      expect(skeletons.length).toBeGreaterThan(0);
+    });
+
+    expect(canvas.getByText("My Time-Off Dashboard")).toBeInTheDocument();
+  },
+};
+
+// ---------------------------------------------------------------------------
+// 6. Network Error — batch endpoint returns 500
+// ---------------------------------------------------------------------------
+export const DashboardNetworkError: StoryObj = {
+  render: () => <DashboardStory />,
+  parameters: {
+    msw: {
+      handlers: [errorBatchHandler],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await waitFor(() => {
+      expect(canvas.getByText("My Time-Off Dashboard")).toBeInTheDocument();
+    });
+
+    // BalanceCard should show 0 with stale indicator since query failed
+    expect(canvas.getByText("0")).toBeInTheDocument();
   },
 };
