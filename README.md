@@ -2,41 +2,7 @@
 
 A high-reliability frontend integration layer for managing employee time-off requests, built for a third-party HCM system. Implements optimistic updates with rollback, polling reconciliation, and comprehensive state coverage.
 
-## Prerequisites
-
-- Node.js >= 18
-- npm >= 9
-
-## How to Test Everything (No Experience Needed)
-
-### 1. Run all 57 automated tests (terminal only)
-```bash
-npm test
-```
-This runs every logic test — offline detection, silent failures, rollbacks, race conditions, location segregation, etc. Just watch the terminal for ✅ or ❌.
-
-### 2. See all 22 visual states in a browser
-```bash
-npm run storybook
-```
-Opens http://localhost:6006. Click **"TimeOff"** in the left sidebar to browse every UI state:
-- Balance card: loading, stale, optimistic, rolled-back, reconciled
-- Submit form: default, submitting, offline mode
-- Pending requests: pending, approved, rejected, Syncing...
-- Dashboard scenarios (with mock API): Happy path, slow network, HCM rejection, mid-session refresh
-
-### 3. Quick one-shot command
-```bash
-npm test && npm run storybook
-```
-Run all tests, then open Storybook.
-
-### 4. Run play-function tests headless
-```bash
-npm run test-storybook
-```
-
-## Setup & Run
+## Quick Start
 
 ```bash
 npm install
@@ -48,7 +14,14 @@ npm run dev
 | Employee Dashboard | http://localhost:3000/employee |
 | Manager Dashboard | http://localhost:3000/manager |
 
+### Prerequisites
+
+- Node.js >= 18
+- npm >= 9
+
 ### Mock HCM API Endpoints
+
+The dev server includes mock endpoints that simulate the real HCM backend:
 
 | Endpoint | Description |
 |---|---|
@@ -57,18 +30,31 @@ npm run dev
 | `POST /api/hcm/real-time` | Submit time-off request |
 | `PATCH /api/hcm/real-time` | Approve/reject request |
 
-## Tests
+## Testing
 
+### 1. Run all automated tests (terminal only)
 ```bash
 npm test
 ```
+Runs 82 tests — offline detection, silent failures, rollbacks, race conditions, location segregation, manager API helpers, and toast context.
 
-### Test Breakdown (57 tests)
+### 2. Run play-function tests headless
+```bash
+npm run test-storybook
+```
+### 3. Quick one-shot (tests + Storybook)
+```bash
+npm test && npm run storybook
+```
+
+### Test Breakdown (82 tests)
 
 | File | Tests | What It Covers |
 |---|---|---|
+| `api-client.test.ts` | 15 | Manager HTTP helpers: real-time balance check, approve, reject — success, error, query encoding, request body |
 | `BalanceCard.test.tsx` | 8 | Loading, stale, optimistic, reconciling badge, zero balance |
 | `PendingRequestRow.test.tsx` | 9 | All status badges, action buttons, callbacks |
+| `QueryClientProvider.test.tsx` | 10 | Toast context: add, remove, auto-dismiss, render styles, multiple toasts, context error |
 | `RequestForm.test.tsx` | 4 | Field rendering, max balance hint, submitting state, onSubmit |
 | `useSubmitRequest.test.tsx` | 3 | Optimistic mutation, rollback, error handling |
 | `section6-integration.test.tsx` | 13 | Optimistic path, failure recovery, polling collision, decision security, silent failure rollback |
@@ -104,7 +90,7 @@ npm test
 npm run storybook
 ```
 
-Opens on http://localhost:6006. Contains **43 stories**:
+Opens on http://localhost:6006. Contains **48 stories**:
 
 **TimeOff/Components (25):**
 - BalanceCard: default, loading, stale, optimistic, optimistic-rolled-back, low balance, reconciling, mid-session refresh
@@ -152,19 +138,23 @@ src/
       PendingRequestRow.tsx   # Request row with approve/deny actions
     __tests__/
       test-utils.tsx          # Shared test infrastructure (controlled fetch, seed data)
-      section6-integration.test.tsx  # Core integration scenarios
+      api-client.test.ts      # Manager HTTP helpers
       BalanceCard.test.tsx
+      PATCH-reject.test.ts
       PendingRequestRow.test.tsx
       RequestForm.test.tsx
-      useSubmitRequest.test.tsx
       scenario-g-offline.test.tsx
       scenario-remaining-cases.test.tsx
-      PATCH-reject.test.ts
+      section6-integration.test.tsx  # Core integration scenarios
+      useSubmitRequest.test.tsx
     time-off.stories.tsx      # All component stories
   stories/
-    TimeOffDashboard.stories.tsx  # MSW-powered dashboard stories
+    ManagerDashboard.stories.tsx  # MSW-powered manager dashboard stories
+    TimeOffDashboard.stories.tsx  # MSW-powered employee dashboard stories
   providers/
     QueryClientProvider.tsx   # TanStack Query + Toast context
+    __tests__/
+      QueryClientProvider.test.tsx  # Toast context tests
   hooks/
     useOnline.ts              # Offline detection hook
   components/
