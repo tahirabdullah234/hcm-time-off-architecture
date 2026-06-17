@@ -30,6 +30,7 @@ interface RequestFormProps {
     employeeName: string;
   }) => void;
   isSubmitting?: boolean;
+  isOffline?: boolean;
   existingRanges?: DateRange[];
 }
 
@@ -44,6 +45,7 @@ export function RequestForm({
   maxBalance,
   onSubmit,
   isSubmitting = false,
+  isOffline = false,
   existingRanges = [],
 }: RequestFormProps) {
   const [startDate, setStartDate] = useState("");
@@ -135,11 +137,16 @@ export function RequestForm({
         <Button
           type="submit"
           loading={isSubmitting}
-          disabled={isSubmitting || blockingError}
+          disabled={isSubmitting || blockingError || isOffline}
           className="w-full"
         >
           {isSubmitting ? "Submitting..." : "Submit Request"}
         </Button>
+        {isOffline && (
+          <p className="text-center text-sm text-amber-600 dark:text-amber-400">
+            You are offline. Reconnecting to HCM...
+          </p>
+        )}
       </form>
     </Card>
   );

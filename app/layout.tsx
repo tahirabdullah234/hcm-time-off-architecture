@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/src/providers/QueryClientProvider";
+import { OfflineBanner } from "@/src/components/OfflineBanner";
+import { ServiceWorkerRegister } from "@/src/components/ServiceWorkerRegister";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,7 +32,11 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-zinc-50 font-sans dark:bg-black">
-        <Providers>{children}</Providers>
+        <Providers>
+          <ServiceWorkerRegister />
+          <OfflineBanner />
+          {children}
+        </Providers>
       </body>
     </html>
   );

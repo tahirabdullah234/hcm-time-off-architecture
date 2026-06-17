@@ -8,6 +8,7 @@ import { BalanceCard } from "@/src/features/time-off/components/BalanceCard";
 import { RequestForm } from "@/src/features/time-off/components/RequestForm";
 import { PendingRequestRow } from "@/src/features/time-off/components/PendingRequestRow";
 import { Button } from "@/src/components/ui/Button";
+import { useOnline } from "@/src/hooks/useOnline";
 import type { SubmitRequestPayload } from "@/src/features/time-off/types";
 
 const CURRENT_EMPLOYEE = {
@@ -21,6 +22,7 @@ export default function EmployeeDashboard() {
   const queryClient = useQueryClient();
   const { data, isLoading, isStale, isFetching } = useBalances();
   const submitMutation = useSubmitRequest();
+  const isOnline = useOnline();
 
   const myBalance = data?.balances.find(
     (b) => b.employeeId === CURRENT_EMPLOYEE.employeeId && b.location === CURRENT_EMPLOYEE.location
@@ -95,6 +97,7 @@ export default function EmployeeDashboard() {
           existingRanges={existingDateRanges}
           onSubmit={handleSubmit}
           isSubmitting={submitMutation.isPending}
+          isOffline={!isOnline}
         />
       </div>
 
@@ -137,10 +140,10 @@ export default function EmployeeDashboard() {
           Click any button to simulate a real-world HCM behavior. Watch the balance card, form, and toasts react.
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" size="sm" onClick={triggerAnniversary}>
+          <Button variant="primary" size="sm" onClick={triggerAnniversary} disabled={!isOnline}>
             Trigger Anniversary Bonus (+1-3 days)
           </Button>
-          <Button variant="primary" size="sm" onClick={triggerSilentFail}>
+          <Button variant="primary" size="sm" onClick={triggerSilentFail} disabled={!isOnline}>
             Trigger Silent Failure (API 200, no deduction)
           </Button>
         </div>

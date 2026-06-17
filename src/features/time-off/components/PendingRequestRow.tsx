@@ -7,6 +7,7 @@ interface PendingRequestRowProps {
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
   isValidating?: boolean;
+  isOffline?: boolean;
 }
 
 const statusConfig = {
@@ -22,6 +23,7 @@ export function PendingRequestRow({
   onApprove,
   onReject,
   isValidating = false,
+  isOffline = false,
 }: PendingRequestRowProps) {
   const statusInfo = statusConfig[request.status];
 
@@ -43,22 +45,31 @@ export function PendingRequestRow({
         </div>
       </div>
       {showActions && request.status === "pending" && (
-        <div className="flex gap-2">
-          <Button
-            variant="primary"
-            size="sm"
-            loading={isValidating}
-            onClick={() => onApprove?.(request.id)}
-          >
-            Approve
-          </Button>
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => onReject?.(request.id)}
-          >
-            Deny
-          </Button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              loading={isValidating}
+              disabled={isOffline}
+              onClick={() => onApprove?.(request.id)}
+            >
+              Approve
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              disabled={isOffline}
+              onClick={() => onReject?.(request.id)}
+            >
+              Deny
+            </Button>
+          </div>
+          {isOffline && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              You are offline. Reconnecting to HCM...
+            </p>
+          )}
         </div>
       )}
     </div>

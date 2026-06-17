@@ -12,12 +12,14 @@ import { BalanceCard } from "@/src/features/time-off/components/BalanceCard";
 import { PendingRequestRow } from "@/src/features/time-off/components/PendingRequestRow";
 import { Card, CardHeader, CardTitle } from "@/src/components/ui/Card";
 import { Button } from "@/src/components/ui/Button";
+import { useOnline } from "@/src/hooks/useOnline";
 import { useToast } from "@/src/providers/QueryClientProvider";
 
 export default function ManagerDashboard() {
   const { data, isLoading, isFetching } = useBalances();
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const isOnline = useOnline();
   const [validatingId, setValidatingId] = useState<string | null>(null);
   const [scenarioLog, setScenarioLog] = useState<string[]>([]);
 
@@ -142,6 +144,7 @@ export default function ManagerDashboard() {
                 request={req}
                 showActions
                 isValidating={validatingId === req.id}
+                isOffline={!isOnline}
                 onApprove={handleApprove}
                 onReject={handleReject}
               />
@@ -164,7 +167,7 @@ export default function ManagerDashboard() {
           Click any button to simulate a real-world HCM behavior. Watch the approval flow and balance card react.
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" size="sm" onClick={() => triggerLateDeduction("EMP001")}>
+          <Button variant="primary" size="sm" onClick={() => triggerLateDeduction("EMP001")} disabled={!isOnline}>
             Simulate Late Deduction (EMP001 - Alice)
           </Button>
         </div>
