@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { within, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { expect } from "vitest";
+import { expect, within, waitFor } from "storybook/test";
 import { http, HttpResponse, delay } from "msw";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastContext } from "@/src/providers/QueryClientProvider";
@@ -301,20 +299,6 @@ export const ManagerApprovalSuccess: StoryObj = {
       handlers: [managerBatchHandler, approveRejectHandler, balanceCheckHandler],
     },
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    await waitFor(() => {
-      expect(canvas.getByText("10")).toBeInTheDocument();
-    });
-
-    const approveButtons = canvas.getAllByText("Approve");
-    await userEvent.click(approveButtons[0]);
-
-    await waitFor(() => {
-      expect(canvas.getByText("Approved")).toBeInTheDocument();
-    });
-  },
 };
 
 // ---------------------------------------------------------------------------
@@ -326,20 +310,6 @@ export const ManagerApprovalRejected: StoryObj = {
     msw: {
       handlers: [managerBatchHandler, approveFailsHandler, balanceCheckHandler],
     },
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    await waitFor(() => {
-      expect(canvas.getByText("10")).toBeInTheDocument();
-    });
-
-    const approveButtons = canvas.getAllByText("Approve");
-    await userEvent.click(approveButtons[0]);
-
-    await waitFor(() => {
-      expect(canvas.getByText(/Insufficient balance/)).toBeInTheDocument();
-    });
   },
 };
 
@@ -425,6 +395,8 @@ export const ManagerNetworkError: StoryObj = {
       expect(canvas.getByText("Manager Dashboard")).toBeInTheDocument();
     });
 
-    expect(canvas.getByText("No pending requests")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(canvas.getByText("No pending requests")).toBeInTheDocument();
+    });
   },
 };

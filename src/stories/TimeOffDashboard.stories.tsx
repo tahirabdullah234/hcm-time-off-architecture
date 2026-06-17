@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { within, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { expect } from "vitest";
+import { expect, within, waitFor, userEvent } from "storybook/test";
 import { http, HttpResponse, delay } from "msw";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastContext } from "@/src/providers/QueryClientProvider";
@@ -415,6 +413,8 @@ export const DashboardNetworkError: StoryObj = {
     });
 
     // BalanceCard should show 0 with stale indicator since query failed
-    expect(canvas.getByText("0")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(canvas.getByText("0")).toBeInTheDocument();
+    });
   },
 };

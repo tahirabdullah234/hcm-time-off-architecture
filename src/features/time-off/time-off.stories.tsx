@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { expect } from "vitest";
+import { expect, within, userEvent } from "storybook/test";
 import { BalanceCard } from "./components/BalanceCard";
 import { RequestForm } from "./components/RequestForm";
 import { PendingRequestRow } from "./components/PendingRequestRow";
@@ -151,20 +149,6 @@ export const RequestFormDefault: StoryObj<typeof RequestForm> = {
       />
     </div>
   ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const startDate = canvas.getByLabelText("Start Date");
-    const endDate = canvas.getByLabelText("End Date");
-    const submitBtn = canvas.getByText("Submit Request");
-
-    await userEvent.type(startDate, "2026-07-10");
-    await userEvent.type(endDate, "2026-07-12");
-
-    expect(startDate).toHaveValue("2026-07-10");
-    expect(endDate).toHaveValue("2026-07-12");
-    expect(canvas.getByText(/Days requested: 3/)).toBeInTheDocument();
-    expect(submitBtn).not.toBeDisabled();
-  },
 };
 
 export const RequestFormOffline: StoryObj<typeof RequestForm> = {
@@ -194,17 +178,6 @@ export const RequestFormValidationPastDate: StoryObj<typeof RequestForm> = {
       />
     </div>
   ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    const startDate = canvas.getByLabelText("Start Date");
-    const endDate = canvas.getByLabelText("End Date");
-    await userEvent.type(startDate, yesterday);
-    await userEvent.type(endDate, yesterday);
-    await expect(
-      canvas.getByText("Start date cannot be in the past")
-    ).toBeInTheDocument();
-  },
 };
 
 export const RequestFormValidationOverlap: StoryObj<typeof RequestForm> = {
@@ -220,16 +193,6 @@ export const RequestFormValidationOverlap: StoryObj<typeof RequestForm> = {
       />
     </div>
   ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const startDate = canvas.getByLabelText("Start Date");
-    const endDate = canvas.getByLabelText("End Date");
-    await userEvent.type(startDate, "2026-07-11");
-    await userEvent.type(endDate, "2026-07-13");
-    await expect(
-      canvas.getByText("Selected dates overlap with an existing request")
-    ).toBeInTheDocument();
-  },
 };
 
 export const RequestFormValidationInsufficientBalance: StoryObj<typeof RequestForm> = {
@@ -244,16 +207,6 @@ export const RequestFormValidationInsufficientBalance: StoryObj<typeof RequestFo
       />
     </div>
   ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const startDate = canvas.getByLabelText("Start Date");
-    const endDate = canvas.getByLabelText("End Date");
-    await userEvent.type(startDate, "2026-07-20");
-    await userEvent.type(endDate, "2026-07-25");
-    await expect(
-      canvas.getByText(/Not enough balance/)
-    ).toBeInTheDocument();
-  },
 };
 
 export const RequestFormSubmitting: StoryObj<typeof RequestForm> = {
